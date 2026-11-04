@@ -15,6 +15,7 @@ import PlayButton from '@app/components/Common/PlayButton';
 import StatusBadgeMini from '@app/components/Common/StatusBadgeMini';
 import Tag from '@app/components/Common/Tag';
 import Tooltip from '@app/components/Common/Tooltip';
+import TrailerModal from '@app/components/Common/TrailerModal';
 import ExternalLinkBlock from '@app/components/ExternalLinkBlock';
 import IssueModal from '@app/components/IssueModal';
 import ManageSlideOver from '@app/components/ManageSlideOver';
@@ -124,6 +125,7 @@ const TvDetails = ({ tv }: TvDetailsProps) => {
   const { locale } = useLocale();
   const [showRequestModal, setShowRequestModal] = useState(false);
   const [showManager, setShowManager] = useState(false);
+  const [showTrailer, setShowTrailer] = useState(false);
   const [showIssueModal, setShowIssueModal] = useState(false);
   const [isUpdating, setIsUpdating] = useState<boolean>(false);
   const [toggleWatchlist, setToggleWatchlist] = useState<boolean>(
@@ -232,6 +234,13 @@ const TvDetails = ({ tv }: TvDetailsProps) => {
       text: intl.formatMessage(messages.watchtrailer),
       url: trailerUrl,
       svg: <FilmIcon />,
+      onClick:
+        trailerVideo?.site === 'YouTube' && !settings.currentSettings.youtubeUrl
+          ? (event) => {
+              event.preventDefault();
+              setShowTrailer(true);
+            }
+          : undefined,
     });
   }
 
@@ -678,6 +687,13 @@ const TvDetails = ({ tv }: TvDetailsProps) => {
             )}
           <div className="z-20">
             <PlayButton links={mediaLinks} />
+            {showTrailer && trailerVideo?.key && (
+              <TrailerModal
+                videoKey={trailerVideo.key}
+                title={data.name}
+                onClose={() => setShowTrailer(false)}
+              />
+            )}
           </div>
           <RequestButton
             mediaType="tv"
