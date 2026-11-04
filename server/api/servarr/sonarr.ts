@@ -264,31 +264,13 @@ class SonarrAPI extends ServarrBase<{
           }
 
           if (options.searchNow) {
-            const seasonsToSearch = this.getSeasonsNeedingSearch(
+            await this.searchSeasons(
+              newSeriesResponse.data.id,
               options.seasons,
-              newSeriesResponse.data.seasons
-            );
-
-            if (seasonsToSearch.length > 0) {
-              logger.debug('Searching seasons with missing episodes', {
-                label: 'Sonarr',
-                seriesId: newSeriesResponse.data.id,
-                requestedSeasons: options.seasons,
-                seasonsToSearch,
-              });
-              this.searchSeasons(newSeriesResponse.data.id, seasonsToSearch, {
+              {
                 seriesType: newSeriesResponse.data.seriesType,
-              });
-            } else {
-              logger.debug(
-                'All requested seasons appear fully downloaded, skipping search',
-                {
-                  label: 'Sonarr',
-                  seriesId: newSeriesResponse.data.id,
-                  requestedSeasons: options.seasons,
-                }
-              );
-            }
+              }
+            );
           }
 
           return newSeriesResponse.data;
@@ -324,9 +306,8 @@ class SonarrAPI extends ServarrBase<{
           seriesType: options.seriesType,
           addOptions: {
             ignoreEpisodesWithFiles: true,
-            // Prevent Sonarr from triggering a series-wide missing search. We run
-            // explicit per-season searches below when requested.
-            searchForMissingEpisodes: false,
+            // Sonarr searches after its initial refresh and only considers monitored episodes.
+            searchForMissingEpisodes: options.searchNow,
           },
         } as Partial<SonarrSeries>
       );
@@ -337,34 +318,6 @@ class SonarrAPI extends ServarrBase<{
           label: 'Sonarr',
           series: createdSeriesResponse.data,
         });
-
-        if (options.searchNow) {
-          const seasonsToSearch = this.getSeasonsNeedingSearch(
-            options.seasons,
-            createdSeriesResponse.data.seasons
-          );
-
-          if (seasonsToSearch.length > 0) {
-            logger.debug('Searching seasons with missing episodes', {
-              label: 'Sonarr',
-              seriesId: createdSeriesResponse.data.id,
-              requestedSeasons: options.seasons,
-              seasonsToSearch,
-            });
-            this.searchSeasons(createdSeriesResponse.data.id, seasonsToSearch, {
-              seriesType: createdSeriesResponse.data.seriesType,
-            });
-          } else {
-            logger.debug(
-              'All requested seasons appear fully downloaded, skipping search',
-              {
-                label: 'Sonarr',
-                seriesId: createdSeriesResponse.data.id,
-                requestedSeasons: options.seasons,
-              }
-            );
-          }
-        }
       } else {
         logger.error('Failed to add series to Sonarr', {
           label: 'Sonarr',
@@ -565,35 +518,6 @@ class SonarrAPI extends ServarrBase<{
         }
       );
     }
-  }
-
-  private getSeasonsNeedingSearch(
-    requestedSeasons: number[],
-    seriesSeasons?: SonarrSeason[] | null
-  ): number[] {
-    if (!Array.isArray(seriesSeasons) || seriesSeasons.length === 0) {
-      return requestedSeasons;
-    }
-
-    return requestedSeasons.filter((seasonNumber) => {
-      const season = seriesSeasons.find((s) => s.seasonNumber === seasonNumber);
-
-      if (!season) {
-        return true;
-      }
-
-      if (!season.statistics) {
-        return true;
-      }
-
-      if (!season.statistics.episodeCount) {
-        return false;
-      }
-
-      return (
-        season.statistics.episodeFileCount < season.statistics.episodeCount
-      );
-    });
   }
 
   private buildSeasonList(
