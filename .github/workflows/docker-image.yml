@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
   push:
     branches:
-      - sonarr-season-search
+      - main
 
 permissions:
   contents: read
