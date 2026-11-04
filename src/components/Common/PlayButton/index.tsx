@@ -8,6 +8,7 @@ export interface PlayButtonLink {
   text: string;
   url: string;
   svg: React.ReactNode;
+  onClick?: React.MouseEventHandler<HTMLAnchorElement>;
 }
 
 const PlayButton = ({ links }: PlayButtonProps) => {
@@ -27,6 +28,7 @@ const PlayButton = ({ links }: PlayButtonProps) => {
       }
       href={links[0].url}
       target="_blank"
+      onClick={links[0].onClick}
     >
       {links.length > 1 &&
         links.slice(1).map((link, i) => {
@@ -36,6 +38,7 @@ const PlayButton = ({ links }: PlayButtonProps) => {
               buttonType="ghost"
               href={link.url}
               target="_blank"
+              onClick={link.onClick}
             >
               {link.svg}
               <span>{link.text}</span>

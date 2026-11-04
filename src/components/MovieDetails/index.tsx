@@ -14,6 +14,7 @@ import type { PlayButtonLink } from '@app/components/Common/PlayButton';
 import PlayButton from '@app/components/Common/PlayButton';
 import Tag from '@app/components/Common/Tag';
 import Tooltip from '@app/components/Common/Tooltip';
+import TrailerModal from '@app/components/Common/TrailerModal';
 import ExternalLinkBlock from '@app/components/ExternalLinkBlock';
 import IssueModal from '@app/components/IssueModal';
 import ManageSlideOver from '@app/components/ManageSlideOver';
@@ -119,6 +120,7 @@ const MovieDetails = ({ movie }: MovieDetailsProps) => {
   const intl = useIntl();
   const { locale } = useLocale();
   const [showManager, setShowManager] = useState(false);
+  const [showTrailer, setShowTrailer] = useState(false);
   const minStudios = 3;
   const [showMoreStudios, setShowMoreStudios] = useState(false);
   const [showIssueModal, setShowIssueModal] = useState(false);
@@ -230,6 +232,13 @@ const MovieDetails = ({ movie }: MovieDetailsProps) => {
       text: intl.formatMessage(messages.watchtrailer),
       url: trailerUrl,
       svg: <FilmIcon />,
+      onClick:
+        trailerVideo?.site === 'YouTube' && !settings.currentSettings.youtubeUrl
+          ? (event) => {
+              event.preventDefault();
+              setShowTrailer(true);
+            }
+          : undefined,
     });
   }
 
@@ -442,6 +451,13 @@ const MovieDetails = ({ movie }: MovieDetailsProps) => {
         height: 493,
       }}
     >
+      {showTrailer && trailerVideo?.key && (
+        <TrailerModal
+          videoKey={trailerVideo.key}
+          title={data.title}
+          onClose={() => setShowTrailer(false)}
+        />
+      )}
       {data.backdropPath && (
         <div className="media-page-bg-image">
           <CachedImage
