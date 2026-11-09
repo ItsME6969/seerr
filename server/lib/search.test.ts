@@ -27,7 +27,7 @@ describe('parseTrailingYear', () => {
     });
   });
 
-  it('leaves standalone years, unmatched brackets, invalid years, and explicit providers alone', () => {
+  it('leaves standalone years, mismatched brackets, invalid years, and explicit providers alone', () => {
     for (const query of [
       '1917',
       '(1982)',
@@ -38,10 +38,79 @@ describe('parseTrailingYear', () => {
     ]) {
       assert.equal(parseTrailingYear(query), undefined);
     }
+    assert.deepEqual(parseTrailingYear('The Thing (1982'), {
+      title: 'The Thing',
+      year: 1982,
+    });
+    assert.deepEqual(parseTrailingYear('The Thing [1982'), {
+      title: 'The Thing',
+      year: 1982,
+    });
     assert.ok(findSearchProvider('tmdb:123 2020'));
     assert.ok(findSearchProvider('the thing year:1982'));
     assert.ok(findSearchProvider('avatar y:2009'));
     assert.equal(findSearchProvider('comedy:2009'), undefined);
+  });
+
+  it('recognizes pasted TMDB movie and TV URLs as exact searches', () => {
+    assert.ok(
+      findSearchProvider(
+        'https://www.themoviedb.org/movie/1368337-the-odyssey?language=en-us'
+      )
+    );
+    assert.ok(
+      findSearchProvider('https://themoviedb.org/tv/1399-game-of-thrones')
+    );
+  });
+
+  it('loads a pasted TMDB movie URL by its exact ID', async () => {
+    const get = mock.method(api, 'get', async () => ({
+      id: 1368337,
+      adult: false,
+      genres: [],
+      original_language: 'en',
+      original_title: 'The Odyssey',
+      overview: 'An epic journey.',
+      popularity: 1,
+      release_date: '2026-07-17',
+      title: 'The Odyssey',
+      video: false,
+      vote_average: 0,
+      vote_count: 0,
+      backdrop_path: null,
+      poster_path: null,
+      videos: { results: [] },
+    }));
+    const provider = findSearchProvider(
+      'https://www.themoviedb.org/movie/1368337-the-odyssey'
+    );
+    assert.ok(provider);
+
+    const result = await provider.search({
+      id: 'https://www.themoviedb.org/movie/1368337-the-odyssey',
+      query: 'https://www.themoviedb.org/movie/1368337-the-odyssey',
+    });
+
+    assert.equal(get.mock.calls[0]?.arguments[0], '/movie/1368337');
+    assert.deepEqual(result.results, [
+      {
+        id: 1368337,
+        media_type: 'movie',
+        adult: false,
+        genre_ids: [],
+        original_language: 'en',
+        original_title: 'The Odyssey',
+        overview: 'An epic journey.',
+        popularity: 1,
+        release_date: '2026-07-17',
+        title: 'The Odyssey',
+        video: false,
+        vote_average: 0,
+        vote_count: 0,
+        backdrop_path: null,
+        poster_path: null,
+      },
+    ]);
   });
 });
 

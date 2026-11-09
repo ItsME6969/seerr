@@ -51,7 +51,7 @@ export const parseTrailingYear = (
 ): { title: string; year: number } | undefined => {
   const match = query
     .trim()
-    .match(/^(.*?)(?:\s*\((\d{4})\)|\s*\[(\d{4})\]|\s+(\d{4}))$/);
+    .match(/^(.*?)(?:\s*\((\d{4})\)?|\s*\[(\d{4})\]?|\s+(\d{4}))$/);
   if (!match) return undefined;
 
   const title = match[1].trim();
@@ -114,6 +114,41 @@ export const searchTitleWithYear = async ({
     ? original
     : filtered;
 };
+
+searchProviders.push({
+  pattern:
+    /https?:\/\/(?:www\.)?themoviedb\.org\/(?:movie|tv)\/\d+(?:[-/?#]|$)/i,
+  search: async ({ query, language }) => {
+    const match = query?.match(
+      /https?:\/\/(?:www\.)?themoviedb\.org\/(movie|tv)\/(\d+)(?:[-/?#]|$)/i
+    );
+
+    if (!match) {
+      return { page: 1, total_pages: 1, total_results: 0, results: [] };
+    }
+
+    const tmdb = new TheMovieDb();
+    const id = Number(match[2]);
+
+    if (match[1].toLowerCase() === 'movie') {
+      const movie = await tmdb.getMovie({ movieId: id, language });
+      return {
+        page: 1,
+        total_pages: 1,
+        total_results: 1,
+        results: [mapMovieDetailsToResult(movie)],
+      };
+    }
+
+    const tvShow = await tmdb.getTvShow({ tvId: id, language });
+    return {
+      page: 1,
+      total_pages: 1,
+      total_results: 1,
+      results: [mapTvDetailsToResult(tvShow)],
+    };
+  },
+});
 
 searchProviders.push({
   pattern: new RegExp(/(?<=tmdb:)\d+/),
