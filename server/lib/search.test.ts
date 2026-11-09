@@ -61,6 +61,8 @@ describe('parseTrailingYear', () => {
     assert.ok(
       findSearchProvider('https://themoviedb.org/tv/1399-game-of-thrones')
     );
+    assert.ok(findSearchProvider('movie/1368337'));
+    assert.ok(findSearchProvider('/tv/1399'));
   });
 
   it('loads a pasted TMDB movie URL by its exact ID', async () => {
@@ -111,6 +113,32 @@ describe('parseTrailingYear', () => {
         poster_path: null,
       },
     ]);
+  });
+
+  it('loads the short movie path form by its exact ID', async () => {
+    const get = mock.method(api, 'get', async () => ({
+      id: 1368337,
+      adult: false,
+      genres: [],
+      original_language: 'en',
+      original_title: 'The Odyssey',
+      overview: 'An epic journey.',
+      popularity: 1,
+      release_date: '2026-07-17',
+      title: 'The Odyssey',
+      video: false,
+      vote_average: 0,
+      vote_count: 0,
+      backdrop_path: null,
+      poster_path: null,
+      videos: { results: [] },
+    }));
+    const provider = findSearchProvider('movie/1368337');
+    assert.ok(provider);
+
+    await provider.search({ id: 'movie/1368337', query: 'movie/1368337' });
+
+    assert.equal(get.mock.calls[0]?.arguments[0], '/movie/1368337');
   });
 });
 

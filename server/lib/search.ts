@@ -117,10 +117,10 @@ export const searchTitleWithYear = async ({
 
 searchProviders.push({
   pattern:
-    /https?:\/\/(?:www\.)?themoviedb\.org\/(?:movie|tv)\/\d+(?:[-/?#]|$)/i,
+    /(?:https?:\/\/(?:www\.)?themoviedb\.org\/)?\/?(?:movie|tv)\/\d+(?:[-/?#]|$)/i,
   search: async ({ query, language }) => {
     const match = query?.match(
-      /https?:\/\/(?:www\.)?themoviedb\.org\/(movie|tv)\/(\d+)(?:[-/?#]|$)/i
+      /(?:https?:\/\/(?:www\.)?themoviedb\.org\/)?\/?(movie|tv)\/(\d+)(?:[-/?#]|$)/i
     );
 
     if (!match) {
