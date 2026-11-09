@@ -167,6 +167,37 @@ function fakePlexShowItem(ratingKey: string): PlexLibraryItem {
   };
 }
 
+function fakePlexMovieItem(
+  ratingKey: string,
+  tmdbId: number,
+  resolutions: string[]
+): PlexLibraryItem {
+  return {
+    ratingKey,
+    title: 'Test Movie',
+    guid: 'plex://movie/test-movie',
+    Guid: [{ id: `tmdb://${tmdbId}` }],
+    addedAt: 1700000000,
+    updatedAt: 1700000000,
+    type: 'movie',
+    Media: resolutions.map((videoResolution, index) => ({
+      id: index,
+      duration: 7200,
+      bitrate: 20000,
+      width: videoResolution === '4k' ? 3840 : 1920,
+      height: videoResolution === '4k' ? 2160 : 1080,
+      aspectRatio: 1.78,
+      audioChannels: 6,
+      audioCodec: 'eac3',
+      videoCodec: videoResolution === '4k' ? 'hevc' : 'h264',
+      videoResolution,
+      container: 'mkv',
+      videoFrameRate: '24p',
+      videoProfile: 'main 10',
+    })),
+  };
+}
+
 function fakePlexShowMetadata(
   ratingKey: string,
   tmdbId: number,
@@ -319,6 +350,95 @@ describe('Plex Scanner', () => {
         MediaRequestStatus.APPROVED,
         'A media server scan must not cancel a request Sonarr is still working on'
       );
+    });
+  });
+
+  describe('movie quality detection', () => {
+    it('restores both statuses for a Plex item containing 1080p and 4K files', async () => {
+      configurePlexWithLibrary([
+        {
+          id: 'test-movie-library-id',
+          name: 'Movies',
+          enabled: true,
+          type: 'movie',
+        },
+      ]);
+      getLibrariesImpl = async () => [
+        {
+          key: 'test-movie-library-id',
+          title: 'Movies',
+          type: 'movie',
+          agent: 'tv.plex.agents.movie',
+        },
+      ];
+      getLibraryContentsImpl = async () => ({
+        totalSize: 1,
+        items: [
+          fakePlexMovieItem('plex-mixed-movie-key', 1368337, [
+            '1080p',
+            '4k',
+          ]),
+        ],
+      });
+
+      const media = await getRepository(Media).save(
+        new Media({
+          tmdbId: 1368337,
+          mediaType: MediaType.MOVIE,
+          status: MediaStatus.DELETED,
+          status4k: MediaStatus.DELETED,
+        })
+      );
+      getSettings().radarr = [
+        {
+          id: 1,
+          name: 'Standard',
+          hostname: 'localhost',
+          port: 7878,
+          apiKey: '',
+          useSsl: false,
+          activeProfileId: 1,
+          activeProfileName: 'HD',
+          activeDirectory: '/movies',
+          tags: [],
+          is4k: false,
+          isDefault: true,
+          syncEnabled: true,
+          preventSearch: false,
+          tagRequests: false,
+          overrideRule: [],
+          minimumAvailability: 'released',
+        },
+        {
+          id: 2,
+          name: '4K',
+          hostname: 'localhost',
+          port: 7879,
+          apiKey: '',
+          useSsl: false,
+          activeProfileId: 1,
+          activeProfileName: '4K',
+          activeDirectory: '/movies-4k',
+          tags: [],
+          is4k: true,
+          isDefault: false,
+          syncEnabled: true,
+          preventSearch: false,
+          tagRequests: false,
+          overrideRule: [],
+          minimumAvailability: 'released',
+        },
+      ];
+
+      await runWithMockTimers(() => plexFullScanner.run());
+
+      const updated = await getRepository(Media).findOneOrFail({
+        where: { id: media.id },
+      });
+      assert.strictEqual(updated.status, MediaStatus.AVAILABLE);
+      assert.strictEqual(updated.status4k, MediaStatus.AVAILABLE);
+      assert.strictEqual(updated.ratingKey, 'plex-mixed-movie-key');
+      assert.strictEqual(updated.ratingKey4k, 'plex-mixed-movie-key');
     });
   });
 });
