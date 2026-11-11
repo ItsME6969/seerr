@@ -232,6 +232,7 @@ const MovieDetails = ({ movie }: MovieDetailsProps) => {
       text: intl.formatMessage(messages.watchtrailer),
       url: trailerUrl,
       svg: <FilmIcon />,
+      isTrailer: true,
       onClick:
         trailerVideo?.site === 'YouTube' && !settings.currentSettings.youtubeUrl
           ? (event) => {
