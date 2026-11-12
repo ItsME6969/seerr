@@ -18,6 +18,11 @@ export interface ProductionCompany {
   description?: string;
   headquarters?: string;
   homepage?: string;
+  parentCompany?: {
+    id: number;
+    name: string;
+    logoPath?: string;
+  };
 }
 
 export interface TvNetwork {

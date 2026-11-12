@@ -22,6 +22,7 @@ type ListViewProps = {
   isReachingEnd?: boolean;
   onScrollBottom: () => void;
   mutateParent?: () => void;
+  compactPeople?: boolean;
 };
 
 const ListView = ({
@@ -32,6 +33,7 @@ const ListView = ({
   isReachingEnd,
   plexItems,
   mutateParent,
+  compactPeople = false,
 }: ListViewProps) => {
   const intl = useIntl();
   const { hasPermission } = useUser();
@@ -140,6 +142,7 @@ const ListView = ({
                     name={title.name}
                     profilePath={title.profilePath}
                     canExpand
+                    compact={compactPeople}
                   />
                 );
                 break;

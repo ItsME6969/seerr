@@ -3,7 +3,11 @@ import TheMovieDb, {
   MovieSortOptionsIterable,
   TvSortOptionsIterable,
 } from '@server/api/themoviedb';
-import type { TmdbKeyword } from '@server/api/themoviedb/interfaces';
+import type {
+  TmdbKeyword,
+  TmdbMovieResult,
+  TmdbTvResult,
+} from '@server/api/themoviedb/interfaces';
 import { MediaType } from '@server/constants/media';
 import { getRepository } from '@server/datasource';
 import Media from '@server/entity/Media';
@@ -61,6 +65,175 @@ export const createTmdbWithBlocklistSettings = (): TheMovieDb => {
 };
 
 const discoverRoutes = Router();
+
+discoverRoutes.get<{ studioId: string }>(
+  '/studio/:studioId/details',
+  async (req, res, next) => {
+    const tmdb = createTmdbWithRegionLanguage(req.user);
+
+    try {
+      const studio = await tmdb.getStudio(Number(req.params.studioId));
+
+      return res.status(200).json(mapProductionCompany(studio));
+    } catch (e) {
+      logger.debug('Something went wrong retrieving studio details', {
+        label: 'API',
+        errorMessage: e.message,
+        studioId: req.params.studioId,
+      });
+      return next({
+        status: 500,
+        message: 'Unable to retrieve studio details.',
+      });
+    }
+  }
+);
+
+discoverRoutes.get<{ studioId: string }>(
+  '/studio/:studioId',
+  async (req, res, next) => {
+    const tmdb = createTmdbWithRegionLanguage(req.user);
+    const mediaType = req.query.mediaType === 'tv' ? 'tv' : 'movie';
+
+    try {
+      const data =
+        mediaType === 'tv'
+          ? await tmdb.getDiscoverTv({
+              page: Number(req.query.page),
+              sortBy: req.query
+                .sortBy as (typeof TvSortOptionsIterable)[number],
+              language: (req.query.language as string) ?? req.locale,
+              studio: req.params.studioId,
+            })
+          : await tmdb.getDiscoverMovies({
+              page: Number(req.query.page),
+              sortBy: req.query
+                .sortBy as (typeof MovieSortOptionsIterable)[number],
+              language: (req.query.language as string) ?? req.locale,
+              studio: req.params.studioId,
+            });
+
+      const relatedMedia = await Media.getRelatedMedia(
+        req.user,
+        data.results.map((result) => ({
+          tmdbId: result.id,
+          mediaType: mediaType === 'tv' ? MediaType.TV : MediaType.MOVIE,
+        })),
+        { includeActiveRequest: true }
+      );
+
+      return res.status(200).json({
+        page: data.page,
+        totalPages: data.total_pages,
+        totalResults: data.total_results,
+        results: data.results.map((result) => {
+          const media = relatedMedia.find(
+            (item) =>
+              item.tmdbId === result.id &&
+              item.mediaType ===
+                (mediaType === 'tv' ? MediaType.TV : MediaType.MOVIE)
+          );
+
+          return mediaType === 'tv'
+            ? mapTvResult(result as TmdbTvResult, media)
+            : mapMovieResult(result as TmdbMovieResult, media);
+        }),
+      });
+    } catch (e) {
+      logger.debug(
+        'Something went wrong retrieving movies or series by studio',
+        {
+          label: 'API',
+          errorMessage: e.message,
+          studioId: req.params.studioId,
+          mediaType,
+        }
+      );
+      return next({
+        status: 500,
+        message: 'Unable to retrieve studio media.',
+      });
+    }
+  }
+);
+
+discoverRoutes.get('/keyword', async (req, res, next) => {
+  const tmdb = createTmdbWithRegionLanguage(req.user);
+  const mediaType = req.query.mediaType === 'tv' ? 'tv' : 'movie';
+  const keywords = req.query.keywords as string | undefined;
+
+  try {
+    if (!keywords) {
+      return next({ status: 400, message: 'Keyword IDs are required.' });
+    }
+
+    const data =
+      mediaType === 'tv'
+        ? await tmdb.getDiscoverTv({
+            page: Number(req.query.page),
+            sortBy: req.query.sortBy as (typeof TvSortOptionsIterable)[number],
+            language: (req.query.language as string) ?? req.locale,
+            keywords,
+          })
+        : await tmdb.getDiscoverMovies({
+            page: Number(req.query.page),
+            sortBy: req.query
+              .sortBy as (typeof MovieSortOptionsIterable)[number],
+            language: (req.query.language as string) ?? req.locale,
+            keywords,
+          });
+
+    const [relatedMedia, keywordData] = await Promise.all([
+      Media.getRelatedMedia(
+        req.user,
+        data.results.map((result) => ({
+          tmdbId: result.id,
+          mediaType: mediaType === 'tv' ? MediaType.TV : MediaType.MOVIE,
+        })),
+        { includeActiveRequest: true }
+      ),
+      Promise.all(
+        keywords
+          .split(',')
+          .map((keywordId) =>
+            tmdb.getKeywordDetails({ keywordId: Number(keywordId) })
+          )
+      ),
+    ]);
+
+    return res.status(200).json({
+      page: data.page,
+      totalPages: data.total_pages,
+      totalResults: data.total_results,
+      keywords: keywordData.filter(
+        (keyword): keyword is TmdbKeyword => keyword !== null
+      ),
+      results: data.results.map((result) => {
+        const media = relatedMedia.find(
+          (item) =>
+            item.tmdbId === result.id &&
+            item.mediaType ===
+              (mediaType === 'tv' ? MediaType.TV : MediaType.MOVIE)
+        );
+
+        return mediaType === 'tv'
+          ? mapTvResult(result as TmdbTvResult, media)
+          : mapMovieResult(result as TmdbMovieResult, media);
+      }),
+    });
+  } catch (e) {
+    logger.debug('Something went wrong retrieving media by keyword', {
+      label: 'API',
+      errorMessage: e.message,
+      keywords,
+      mediaType,
+    });
+    return next({
+      status: 500,
+      message: 'Unable to retrieve media by keyword.',
+    });
+  }
+});
 
 const QueryFilterOptions = z.object({
   page: z.coerce.string().optional(),
@@ -428,6 +601,7 @@ discoverRoutes.get('/tv', async (req, res, next) => {
       language: req.locale ?? query.language,
       genre: query.genre,
       network: query.network ? Number(query.network) : undefined,
+      studio: query.studio,
       firstAirDateLte: query.firstAirDateLte
         ? new Date(query.firstAirDateLte).toISOString().split('T')[0]
         : undefined,
@@ -501,6 +675,59 @@ discoverRoutes.get('/tv', async (req, res, next) => {
     });
   }
 });
+
+discoverRoutes.get<{ studioId: string }>(
+  '/tv/studio/:studioId',
+  async (req, res, next) => {
+    const tmdb = new TheMovieDb();
+
+    try {
+      const studio = await tmdb.getStudio(Number(req.params.studioId));
+      const data = await tmdb.getDiscoverTv({
+        page: Number(req.query.page),
+        sortBy: req.query.sortBy as (typeof TvSortOptionsIterable)[number],
+        language: (req.query.language as string) ?? req.locale,
+        studio: req.params.studioId,
+      });
+      const tvResults = data.results ?? [];
+
+      const media = await Media.getRelatedMedia(
+        req.user,
+        tvResults.map((result) => ({
+          tmdbId: result.id,
+          mediaType: MediaType.TV,
+        })),
+        { includeActiveRequest: true }
+      );
+
+      return res.status(200).json({
+        page: data.page,
+        totalPages: data.total_pages,
+        totalResults: data.total_results,
+        studio: mapProductionCompany(studio),
+        results: tvResults.map((result) =>
+          mapTvResult(
+            result,
+            media.find(
+              (med) =>
+                med.tmdbId === result.id && med.mediaType === MediaType.TV
+            )
+          )
+        ),
+      });
+    } catch (e) {
+      logger.debug('Something went wrong retrieving series by studio', {
+        label: 'API',
+        errorMessage: e.message,
+        studioId: req.params.studioId,
+      });
+      return next({
+        status: 500,
+        message: 'Unable to retrieve series by studio.',
+      });
+    }
+  }
+);
 
 discoverRoutes.get<{ language: string }>(
   '/tv/language/:language',

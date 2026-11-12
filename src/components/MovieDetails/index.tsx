@@ -8,6 +8,7 @@ import TmdbLogo from '@app/assets/tmdb_logo.svg';
 import BlocklistModal from '@app/components/BlocklistModal';
 import Button from '@app/components/Common/Button';
 import CachedImage from '@app/components/Common/CachedImage';
+import FilmReelIcon from '@app/components/Common/FilmReelIcon';
 import LoadingSpinner from '@app/components/Common/LoadingSpinner';
 import PageTitle from '@app/components/Common/PageTitle';
 import type { PlayButtonLink } from '@app/components/Common/PlayButton';
@@ -39,7 +40,6 @@ import {
   CogIcon,
   ExclamationTriangleIcon,
   EyeSlashIcon,
-  FilmIcon,
   MinusCircleIcon,
   PlayIcon,
   StarIcon,
@@ -238,7 +238,7 @@ const MovieDetails = ({ movie }: MovieDetailsProps) => {
     mediaLinks.push({
       text: intl.formatMessage(messages.watchtrailer),
       url: trailerUrl,
-      svg: <FilmIcon />,
+      svg: <FilmReelIcon className="!h-5 !w-5" />,
       isTrailer: true,
       onClick:
         trailerVideo?.site === 'YouTube' && !settings.currentSettings.youtubeUrl
@@ -752,7 +752,7 @@ const MovieDetails = ({ movie }: MovieDetailsProps) => {
             <div className="mt-6">
               {data.keywords.map((keyword) => (
                 <Link
-                  href={`/discover/movies?keywords=${keyword.id}`}
+                  href={`/discover/keyword?keywords=${keyword.id}&mediaType=movie`}
                   key={`keyword-id-${keyword.id}`}
                   className="mb-2 mr-2 inline-flex last:mr-0"
                 >
@@ -1061,7 +1061,7 @@ const MovieDetails = ({ movie }: MovieDetailsProps) => {
                     .map((s) => {
                       return (
                         <Link
-                          href={`/discover/movies/studio/${s.id}`}
+                          href={`/discover/studio/${s.id}?mediaType=movie`}
                           key={`studio-${s.id}`}
                           className="block"
                         >

@@ -7,22 +7,52 @@ import type { UrlObject } from 'url';
 import useDebouncedState from './useDebouncedState';
 
 type Url = string | UrlObject;
+export type SearchType =
+  | 'all'
+  | 'movie'
+  | 'tv'
+  | 'person'
+  | 'keyword'
+  | 'company'
+  | 'collection';
+
+const getSearchTypeFromPathname = (
+  pathname: string
+): SearchType | undefined => {
+  if (pathname.startsWith('/collection/')) return 'collection';
+  if (pathname.includes('/keyword')) return 'keyword';
+  if (pathname.includes('/studio/')) return 'company';
+  if (pathname.startsWith('/discover/movies')) return 'movie';
+  if (pathname.startsWith('/discover/tv')) return 'tv';
+
+  return undefined;
+};
 
 interface SearchObject {
   searchValue: string;
   searchOpen: boolean;
   setIsOpen: Dispatch<SetStateAction<boolean>>;
   setSearchValue: Dispatch<SetStateAction<string>>;
+  searchType: SearchType;
+  searchTypeLocked: boolean;
+  setSearchType: (type: SearchType) => void;
   clear: () => void;
 }
 
 const useSearchInput = (): SearchObject => {
   const router = useRouter();
   const [searchOpen, setIsOpen] = useState(false);
+  const [searchType, setSearchTypeState] = useState<SearchType>(
+    (router.query.type as SearchType) ||
+      getSearchTypeFromPathname(router.pathname) ||
+      'all'
+  );
   const [lastRoute, setLastRoute] = useState<Nullable<Url>>(null);
   const [searchValue, debouncedValue, setSearchValue] = useDebouncedState(
     (router.query.query as string) ?? ''
   );
+  const routeSearchType = getSearchTypeFromPathname(router.pathname);
+  const searchTypeLocked = routeSearchType !== undefined;
 
   /**
    * This effect handles routing when the debounced search input
@@ -46,7 +76,10 @@ const useSearchInput = (): SearchObject => {
         router
           .push({
             pathname: '/search',
-            query: { query: debouncedValue },
+            query: {
+              query: debouncedValue,
+              ...(searchType !== 'all' ? { type: searchType } : {}),
+            },
           })
           .then(() => window.scrollTo(0, 0));
       }
@@ -89,6 +122,17 @@ const useSearchInput = (): SearchObject => {
    * is on /search
    */
   useEffect(() => {
+    const routeSearchType =
+      (router.query.type as SearchType) ||
+      getSearchTypeFromPathname(router.pathname);
+
+    if (routeSearchType || !router.pathname.startsWith('/search')) {
+      const nextSearchType = routeSearchType ?? 'all';
+      if (nextSearchType !== searchType) {
+        setSearchTypeState(nextSearchType);
+      }
+    }
+
     if (router.query.query !== debouncedValue) {
       setSearchValue(
         router.query.query
@@ -104,11 +148,31 @@ const useSearchInput = (): SearchObject => {
     if (router.pathname.startsWith('/search')) {
       setIsOpen(true);
     }
-  }, [router, setSearchValue]);
+  }, [router, setSearchValue, searchType]);
 
   const clear = () => {
     setIsOpen(false);
     setSearchValue('');
+  };
+
+  const setSearchType = (type: SearchType) => {
+    setSearchTypeState(type);
+
+    if (!router.pathname.startsWith('/search')) {
+      return;
+    }
+
+    router.replace({
+      pathname: router.pathname,
+      query:
+        type === 'all'
+          ? (() => {
+              const query = { ...router.query };
+              delete query.type;
+              return query;
+            })()
+          : { ...router.query, type },
+    });
   };
 
   return {
@@ -116,6 +180,9 @@ const useSearchInput = (): SearchObject => {
     searchOpen,
     setIsOpen,
     setSearchValue,
+    searchType,
+    searchTypeLocked,
+    setSearchType,
     clear,
   };
 };

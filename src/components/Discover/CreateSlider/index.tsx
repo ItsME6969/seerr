@@ -262,7 +262,7 @@ const CreateSlider = ({ onCreate, slider }: CreateSliderProps) => {
     {
       type: DiscoverSliderType.TMDB_STUDIO,
       title: intl.formatMessage(sliderTitles.tmdbstudio),
-      dataUrl: '/api/v1/discover/movies/studio/$value',
+      dataUrl: '/api/v1/discover/studio/$value?mediaType=movie',
       titlePlaceholderText: intl.formatMessage(messages.slidernameplaceholder),
       dataPlaceholderText: intl.formatMessage(messages.providetmdbstudio),
     },

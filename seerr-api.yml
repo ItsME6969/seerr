@@ -5534,6 +5534,19 @@ paths:
           schema:
             type: string
             example: en
+        - in: query
+          name: type
+          schema:
+            type: string
+            enum:
+              - all
+              - movie
+              - tv
+              - person
+              - keyword
+              - company
+              - collection
+            default: all
       responses:
         '200':
           description: Results
@@ -5925,6 +5938,84 @@ paths:
                     type: array
                     items:
                       $ref: '#/components/schemas/MovieResult'
+  /discover/studio/{studioId}:
+    get:
+      summary: Discover movies or TV shows by studio
+      description: Returns movies or TV shows associated with the provided studio ID.
+      tags:
+        - search
+      parameters:
+        - in: path
+          name: studioId
+          required: true
+          schema:
+            type: string
+            example: '3268'
+        - in: query
+          name: mediaType
+          schema:
+            type: string
+            enum:
+              - movie
+              - tv
+            default: movie
+        - in: query
+          name: page
+          schema:
+            type: number
+            example: 1
+            default: 1
+        - in: query
+          name: sortBy
+          schema:
+            type: string
+        - in: query
+          name: language
+          schema:
+            type: string
+            example: en
+      responses:
+        '200':
+          description: Results
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  page:
+                    type: number
+                  totalPages:
+                    type: number
+                  totalResults:
+                    type: number
+                  studio:
+                    $ref: '#/components/schemas/ProductionCompany'
+                  results:
+                    type: array
+                    items:
+                      oneOf:
+                        - $ref: '#/components/schemas/MovieResult'
+                        - $ref: '#/components/schemas/TvResult'
+  /discover/studio/{studioId}/details:
+    get:
+      summary: Get studio details
+      description: Returns metadata for a production studio.
+      tags:
+        - search
+      parameters:
+        - in: path
+          name: studioId
+          required: true
+          schema:
+            type: string
+            example: '3268'
+      responses:
+        '200':
+          description: Studio details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductionCompany'
   /discover/movies/upcoming:
     get:
       summary: Upcoming movies
@@ -6354,6 +6445,66 @@ paths:
                         - $ref: '#/components/schemas/MovieResult'
                         - $ref: '#/components/schemas/TvResult'
                         - $ref: '#/components/schemas/PersonResult'
+  /discover/keyword:
+    get:
+      summary: Discover movies or TV shows by keyword
+      description: Returns movies or TV shows matching the provided TMDB keyword IDs.
+      tags:
+        - search
+      parameters:
+        - in: query
+          name: keywords
+          required: true
+          schema:
+            type: string
+            example: '2150'
+        - in: query
+          name: mediaType
+          schema:
+            type: string
+            enum:
+              - movie
+              - tv
+            default: movie
+        - in: query
+          name: page
+          schema:
+            type: number
+            example: 1
+            default: 1
+        - in: query
+          name: sortBy
+          schema:
+            type: string
+        - in: query
+          name: language
+          schema:
+            type: string
+            example: en
+      responses:
+        '200':
+          description: Results
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  page:
+                    type: number
+                  totalPages:
+                    type: number
+                  totalResults:
+                    type: number
+                  keywords:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Keyword'
+                  results:
+                    type: array
+                    items:
+                      oneOf:
+                        - $ref: '#/components/schemas/MovieResult'
+                        - $ref: '#/components/schemas/TvResult'
   /discover/keyword/{keywordId}/movies:
     get:
       summary: Get movies from keyword
