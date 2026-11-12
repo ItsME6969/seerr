@@ -1,8 +1,8 @@
-import DiscoverTvKeyword from '@app/components/Discover/DiscoverTvKeyword';
+import DiscoverKeyword from '@app/components/Discover/DiscoverKeyword';
 import type { NextPage } from 'next';
 
 const DiscoverTvKeywordPage: NextPage = () => {
-  return <DiscoverTvKeyword />;
+  return <DiscoverKeyword mediaType="tv" />;
 };
 
 export default DiscoverTvKeywordPage;

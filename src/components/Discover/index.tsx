@@ -296,7 +296,7 @@ const Discover = () => {
                     ? `keywords=${encodeURIExtraParams(slider.data)}`
                     : ''
                 }
-                linkUrl={`/discover/movies?keywords=${slider.data}`}
+                linkUrl={`/discover/keyword?keywords=${slider.data}&mediaType=movie`}
               />
             );
             break;
@@ -311,7 +311,7 @@ const Discover = () => {
                     ? `keywords=${encodeURIExtraParams(slider.data)}`
                     : ''
                 }
-                linkUrl={`/discover/tv?keywords=${slider.data}`}
+                linkUrl={`/discover/keyword?keywords=${slider.data}&mediaType=tv`}
               />
             );
             break;
@@ -342,8 +342,8 @@ const Discover = () => {
               <MediaSlider
                 sliderKey={`custom-slider-${slider.id}`}
                 title={slider.title ?? ''}
-                url={`/api/v1/discover/movies/studio/${slider.data}`}
-                linkUrl={`/discover/movies/studio/${slider.data}`}
+                url={`/api/v1/discover/studio/${slider.data}?mediaType=movie`}
+                linkUrl={`/discover/studio/${slider.data}?mediaType=movie`}
               />
             );
             break;

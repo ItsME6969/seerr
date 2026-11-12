@@ -6,6 +6,7 @@ import { getSettings } from '@server/lib/settings';
 import { sortBy } from 'lodash';
 import type {
   TmdbCollection,
+  TmdbCollectionSearchResponse,
   TmdbCompanySearchResponse,
   TmdbExternalIdResponse,
   TmdbGenre,
@@ -21,6 +22,7 @@ import type {
   TmdbRegion,
   TmdbSearchMovieResponse,
   TmdbSearchMultiResponse,
+  TmdbSearchPersonResponse,
   TmdbSearchTvResponse,
   TmdbSeasonWithEpisodes,
   TmdbTvDetails,
@@ -126,6 +128,7 @@ interface DiscoverTvOptions {
   originalLanguage?: string;
   genre?: string;
   network?: number;
+  studio?: string;
   keywords?: string;
   excludeKeywords?: string;
   sortBy?: TvSortOptions;
@@ -277,6 +280,23 @@ class TheMovieDb extends ExternalAPI implements TvShowProvider {
         total_pages: 1,
         total_results: 0,
       };
+    }
+  };
+
+  public searchPeople = async ({
+    query,
+    page = 1,
+    includeAdult = false,
+    language = this.locale,
+  }: SearchOptions): Promise<TmdbSearchPersonResponse> => {
+    try {
+      const data = await this.get<TmdbSearchPersonResponse>('/search/person', {
+        params: { query, page, include_adult: includeAdult, language },
+      });
+
+      return data;
+    } catch {
+      return { page: 1, results: [], total_pages: 1, total_results: 0 };
     }
   };
 
@@ -775,6 +795,7 @@ class TheMovieDb extends ExternalAPI implements TvShowProvider {
     originalLanguage,
     genre,
     network,
+    studio,
     keywords,
     excludeKeywords,
     withRuntimeGte,
@@ -827,6 +848,7 @@ class TheMovieDb extends ExternalAPI implements TvShowProvider {
           include_null_first_air_dates: includeEmptyReleaseDate,
           with_genres: genre,
           with_networks: network,
+          with_companies: studio,
           with_keywords: keywords,
           without_keywords: excludeKeywords,
           'with_runtime.gte': withRuntimeGte,
@@ -1407,6 +1429,32 @@ class TheMovieDb extends ExternalAPI implements TvShowProvider {
       return data;
     } catch (e) {
       throw new Error(`[TMDB] Failed to search companies: ${e.message}`, {
+        cause: e,
+      });
+    }
+  }
+
+  public async searchCollections({
+    query,
+    page = 1,
+    language = this.locale,
+  }: SearchOptions): Promise<TmdbCollectionSearchResponse> {
+    try {
+      const data = await this.get<TmdbCollectionSearchResponse>(
+        '/search/collection',
+        {
+          params: {
+            query,
+            page,
+            language,
+          },
+        },
+        86400 // 24 hours
+      );
+
+      return data;
+    } catch (e) {
+      throw new Error(`[TMDB] Failed to search collections: ${e.message}`, {
         cause: e,
       });
     }

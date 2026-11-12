@@ -57,19 +57,20 @@ const SidebarLinks: SidebarLinkProps[] = [
     href: '/',
     messagesKey: 'dashboard',
     svgIcon: <SparklesIcon className="mr-3 h-6 w-6" />,
-    activeRegExp: /^\/(discover\/?)?$/,
+    activeRegExp:
+      /^\/(discover\/(keyword|studio|collection)(\/|$)|discover\/?$|$)/,
   },
   {
     href: '/discover/movies',
     messagesKey: 'browsemovies',
     svgIcon: <FilmIcon className="mr-3 h-6 w-6" />,
-    activeRegExp: /^\/discover\/movies$/,
+    activeRegExp: /^(\/discover\/movies|\/movie)(\/|$)/,
   },
   {
     href: '/discover/tv',
     messagesKey: 'browsetv',
     svgIcon: <TvIcon className="mr-3 h-6 w-6" />,
-    activeRegExp: /^\/discover\/tv$/,
+    activeRegExp: /^(\/discover\/tv|\/tv)(\/|$)/,
   },
   {
     href: '/requests',
@@ -131,6 +132,20 @@ const Sidebar = ({
   const intl = useIntl();
   const { hasPermission } = useUser();
   useClickOutside(navRef, () => setClosed());
+
+  const isSidebarLinkActive = (link: SidebarLinkProps) => {
+    if (router.pathname.startsWith('/search')) {
+      const searchType = router.query.type;
+      if (link.messagesKey === 'browsemovies') return searchType === 'movie';
+      if (link.messagesKey === 'browsetv') return searchType === 'tv';
+      if (link.messagesKey === 'dashboard') {
+        return searchType !== 'movie' && searchType !== 'tv';
+      }
+      return false;
+    }
+
+    return router.pathname.match(link.activeRegExp);
+  };
 
   useEffect(() => {
     if (openIssuesCount) {
@@ -218,7 +233,7 @@ const Sidebar = ({
                             role="button"
                             tabIndex={0}
                             className={`flex items-center rounded-md px-2 py-2 text-base font-medium leading-6 text-white transition duration-150 ease-in-out focus:outline-none ${
-                              router.pathname.match(sidebarLink.activeRegExp)
+                              isSidebarLinkActive(sidebarLink)
                                 ? 'bg-gradient-to-br from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500'
                                 : 'hover:bg-gray-700 focus:bg-gray-700'
                             } `}
@@ -278,7 +293,7 @@ const Sidebar = ({
                       href={sidebarLink.href}
                       as={sidebarLink.as}
                       className={`group flex items-center rounded-md px-2 py-2 text-lg font-medium leading-6 text-white transition duration-150 ease-in-out focus:outline-none ${
-                        router.pathname.match(sidebarLink.activeRegExp)
+                        isSidebarLinkActive(sidebarLink)
                           ? 'bg-gradient-to-br from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500'
                           : 'hover:bg-gray-700 focus:bg-gray-700'
                       } `}
@@ -294,7 +309,7 @@ const Sidebar = ({
                           <div className="ml-auto flex">
                             <Badge
                               className={`rounded-md bg-gradient-to-br ${
-                                router.pathname.match(sidebarLink.activeRegExp)
+                                isSidebarLinkActive(sidebarLink)
                                   ? 'border-indigo-600 from-indigo-700 to-purple-700'
                                   : 'border-indigo-500 from-indigo-600 to-purple-600'
                               }`}
@@ -309,7 +324,7 @@ const Sidebar = ({
                           <div className="ml-auto flex">
                             <Badge
                               className={`rounded-md bg-gradient-to-br ${
-                                router.pathname.match(sidebarLink.activeRegExp)
+                                isSidebarLinkActive(sidebarLink)
                                   ? 'border-indigo-600 from-indigo-700 to-purple-700'
                                   : 'border-indigo-500 from-indigo-600 to-purple-600'
                               }`}

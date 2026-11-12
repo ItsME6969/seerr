@@ -98,6 +98,13 @@ export const mapProductionCompany = (
   headquarters: company.headquarters,
   homepage: company.homepage,
   logoPath: company.logo_path,
+  parentCompany: company.parent_company
+    ? {
+        id: company.parent_company.id,
+        name: company.parent_company.name,
+        logoPath: company.parent_company.logo_path,
+      }
+    : undefined,
 });
 
 export const mapMovieDetails = (

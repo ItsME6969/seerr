@@ -60,6 +60,19 @@ const MobileMenu = ({
   const [isOpen, setIsOpen] = useState(false);
   const { hasPermission } = useUser();
   const router = useRouter();
+  const isMenuLinkActive = (link: MenuLink) => {
+    if (router.pathname.startsWith('/search')) {
+      const searchType = router.query.type;
+      if (link.href === '/discover/movies') return searchType === 'movie';
+      if (link.href === '/discover/tv') return searchType === 'tv';
+      if (link.href === '/') {
+        return searchType !== 'movie' && searchType !== 'tv';
+      }
+      return false;
+    }
+
+    return router.pathname.match(link.activeRegExp);
+  };
   useClickOutside(ref, () => {
     setTimeout(() => {
       if (isOpen) {
@@ -76,21 +89,22 @@ const MobileMenu = ({
       content: intl.formatMessage(menuMessages.dashboard),
       svgIcon: <SparklesIcon className="h-6 w-6" />,
       svgIconSelected: <FilledSparklesIcon className="h-6 w-6" />,
-      activeRegExp: /^\/(discover\/?)?$/,
+      activeRegExp:
+        /^\/(discover\/(keyword|studio|collection)(\/|$)|discover\/?$|$)/,
     },
     {
       href: '/discover/movies',
       content: intl.formatMessage(menuMessages.browsemovies),
       svgIcon: <FilmIcon className="h-6 w-6" />,
       svgIconSelected: <FilledFilmIcon className="h-6 w-6" />,
-      activeRegExp: /^\/discover\/movies$/,
+      activeRegExp: /^(\/discover\/movies|\/movie)(\/|$)/,
     },
     {
       href: '/discover/tv',
       content: intl.formatMessage(menuMessages.browsetv),
       svgIcon: <TvIcon className="h-6 w-6" />,
       svgIconSelected: <FilledTvIcon className="h-6 w-6" />,
-      activeRegExp: /^\/discover\/tv$/,
+      activeRegExp: /^(\/discover\/tv|\/tv)(\/|$)/,
     },
     {
       href: '/requests',
@@ -182,7 +196,7 @@ const MobileMenu = ({
         className="absolute left-0 right-0 top-0 flex w-full -translate-y-full flex-col space-y-6 border-t border-gray-600 bg-gray-900/90 px-6 py-6 font-semibold text-gray-100 backdrop-blur"
       >
         {filteredLinks.map((link) => {
-          const isActive = router.pathname.match(link.activeRegExp);
+          const isActive = isMenuLinkActive(link);
           return (
             <Link
               key={`mobile-menu-link-${link.href}`}
@@ -230,8 +244,7 @@ const MobileMenu = ({
           {filteredLinks
             .slice(0, filteredLinks.length === 5 ? 5 : 4)
             .map((link) => {
-              const isActive =
-                router.pathname.match(link.activeRegExp) && !isOpen;
+              const isActive = isMenuLinkActive(link) && !isOpen;
               return (
                 <Link
                   key={`mobile-menu-link-${link.href}`}
@@ -252,7 +265,7 @@ const MobileMenu = ({
                       <div className="absolute bottom-3 left-3">
                         <Badge
                           className={`bg-gradient-to-br ${
-                            router.pathname.match(link.activeRegExp)
+                            isMenuLinkActive(link)
                               ? 'border-indigo-600 from-indigo-700 to-purple-700'
                               : 'border-indigo-500 from-indigo-600 to-purple-600'
                           } flex ${

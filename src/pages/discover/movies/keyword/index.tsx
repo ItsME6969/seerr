@@ -1,8 +1,8 @@
-import DiscoverMovieKeyword from '@app/components/Discover/DiscoverMovieKeyword';
+import DiscoverKeyword from '@app/components/Discover/DiscoverKeyword';
 import type { NextPage } from 'next';
 
 const DiscoverMoviesKeywordPage: NextPage = () => {
-  return <DiscoverMovieKeyword />;
+  return <DiscoverKeyword mediaType="movie" />;
 };
 
 export default DiscoverMoviesKeywordPage;

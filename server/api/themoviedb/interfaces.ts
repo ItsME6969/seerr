@@ -73,6 +73,10 @@ export interface TmdbSearchTvResponse extends TmdbPaginatedResponse {
   results: TmdbTvResult[];
 }
 
+export interface TmdbSearchPersonResponse extends TmdbPaginatedResponse {
+  results: TmdbPersonResult[];
+}
+
 export interface TmdbUpcomingMoviesResponse extends TmdbPaginatedResponse {
   dates: {
     maximum: string;
@@ -135,6 +139,11 @@ export interface TmdbProductionCompany {
   homepage?: string;
   headquarters?: string;
   description?: string;
+  parent_company?: {
+    id: number;
+    name: string;
+    logo_path?: string;
+  } | null;
 }
 
 export interface TmdbMovieDetails {
@@ -465,11 +474,16 @@ export interface TmdbKeywordSearchResponse extends TmdbPaginatedResponse {
   results: TmdbKeyword[];
 }
 
+export interface TmdbCollectionSearchResponse extends TmdbPaginatedResponse {
+  results: TmdbCollectionResult[];
+}
+
 // We have production companies, but the company search results return less data
 export interface TmdbCompany {
   id: number;
   logo_path?: string;
   name: string;
+  origin_country?: string;
 }
 
 export interface TmdbCompanySearchResponse extends TmdbPaginatedResponse {
