@@ -154,7 +154,7 @@ const ListView = ({
           !isReachingEnd &&
           [...Array(20)].map((_item, i) => (
             <li key={`placeholder-${i}`}>
-              <TitleCard.Placeholder canExpand />
+              <TitleCard.Placeholder canExpand compact={compactPeople} />
             </li>
           ))}
       </ul>

@@ -133,9 +133,12 @@ export const mapPersonResult = (
   name: personResult.name,
   popularity: personResult.popularity,
   adult: personResult.adult,
-  mediaType: personResult.media_type,
+  mediaType: personResult.media_type || 'person',
   profilePath: personResult.profile_path,
-  knownFor: personResult.known_for.map((result) => {
+  knownFor: (Array.isArray(personResult.known_for)
+    ? personResult.known_for
+    : []
+  ).map((result) => {
     if (result.media_type === 'movie') {
       return mapMovieResult(result);
     }

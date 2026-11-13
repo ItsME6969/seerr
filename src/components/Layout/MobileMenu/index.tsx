@@ -90,7 +90,7 @@ const MobileMenu = ({
       svgIcon: <SparklesIcon className="h-6 w-6" />,
       svgIconSelected: <FilledSparklesIcon className="h-6 w-6" />,
       activeRegExp:
-        /^\/(discover\/(keyword|studio|collection)(\/|$)|discover\/?$|$)/,
+        /^\/(discover\/(keyword|studio|collection)(\/|$)|person(\/|$)|discover\/?$|$)/,
     },
     {
       href: '/discover/movies',

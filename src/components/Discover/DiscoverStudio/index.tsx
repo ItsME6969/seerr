@@ -19,6 +19,7 @@ import type { MovieResult, TvResult } from '@server/models/Search';
 import type { ProductionCompany } from '@server/models/common';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
+import { useEffect, useState } from 'react';
 import { useIntl, type MessageDescriptor } from 'react-intl';
 import useSWR from 'swr';
 
@@ -30,9 +31,13 @@ const messages = defineMessages('components.Discover.DiscoverStudio', {
   series: 'Series',
   website: 'Official website',
   sortPopularityDesc: 'Popularity Descending',
+  sortPopularityAsc: 'Popularity Ascending',
   sortReleaseDateDesc: 'Release Date Descending',
+  sortReleaseDateAsc: 'Release Date Ascending',
   sortRatingDesc: 'TMDB Rating Descending',
-  sortTitleAsc: 'Title (A-Z)',
+  sortRatingAsc: 'TMDB Rating Ascending',
+  sortTitleAsc: 'Title (A-Z) Ascending',
+  sortTitleDesc: 'Title (Z-A) Descending',
 });
 
 const DiscoverMovieStudio = ({
@@ -44,21 +49,34 @@ const DiscoverMovieStudio = ({
   const intl = useIntl();
   const updateQueryParams = useUpdateQueryParams({});
   const isTv = mediaType === 'tv';
+  const [selectedMediaType, setSelectedMediaType] = useState(mediaType);
+
+  useEffect(() => {
+    setSelectedMediaType(mediaType);
+  }, [mediaType]);
   const mediaLabel = intl.formatMessage(
     isTv ? messages.series : messages.movies
   );
   const sortOptions: [string, MessageDescriptor][] = isTv
     ? [
         ['popularity.desc', messages.sortPopularityDesc],
+        ['popularity.asc', messages.sortPopularityAsc],
         ['first_air_date.desc', messages.sortReleaseDateDesc],
+        ['first_air_date.asc', messages.sortReleaseDateAsc],
         ['vote_average.desc', messages.sortRatingDesc],
+        ['vote_average.asc', messages.sortRatingAsc],
         ['name.asc', messages.sortTitleAsc],
+        ['name.desc', messages.sortTitleDesc],
       ]
     : [
         ['popularity.desc', messages.sortPopularityDesc],
+        ['popularity.asc', messages.sortPopularityAsc],
         ['primary_release_date.desc', messages.sortReleaseDateDesc],
+        ['primary_release_date.asc', messages.sortReleaseDateAsc],
         ['vote_average.desc', messages.sortRatingDesc],
+        ['vote_average.asc', messages.sortRatingAsc],
         ['original_title.asc', messages.sortTitleAsc],
+        ['original_title.desc', messages.sortTitleDesc],
       ];
 
   const {
@@ -221,14 +239,16 @@ const DiscoverMovieStudio = ({
           <div className="flex overflow-hidden rounded-md border border-gray-500 text-sm">
             <Link
               href={`/discover/studio/${router.query.studioId}?mediaType=movie${router.query.sortBy ? `&sortBy=${router.query.sortBy}` : ''}`}
-              className={`px-4 py-2 ${!isTv ? 'bg-indigo-600 text-white' : 'bg-gray-800 text-gray-300 hover:bg-gray-700'}`}
+              onMouseDown={() => setSelectedMediaType('movie')}
+              className={`px-4 py-2 ${selectedMediaType === 'movie' ? 'bg-blue-600 text-white' : 'bg-gray-800 text-gray-300 hover:bg-gray-700'}`}
             >
               <FilmIcon className="mr-1 inline-block h-4 w-4 align-text-bottom" />
               Movies
             </Link>
             <Link
               href={`/discover/studio/${router.query.studioId}?mediaType=tv${router.query.sortBy ? `&sortBy=${router.query.sortBy}` : ''}`}
-              className={`border-l border-gray-500 px-4 py-2 ${isTv ? 'bg-indigo-600 text-white' : 'bg-gray-800 text-gray-300 hover:bg-gray-700'}`}
+              onMouseDown={() => setSelectedMediaType('tv')}
+              className={`border-l border-gray-500 px-4 py-2 ${selectedMediaType === 'tv' ? 'bg-purple-600 text-white' : 'bg-gray-800 text-gray-300 hover:bg-gray-700'}`}
             >
               <TvIcon className="mr-1 inline-block h-4 w-4 align-text-bottom" />
               Series
