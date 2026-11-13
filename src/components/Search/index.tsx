@@ -15,6 +15,7 @@ import type {
 } from '@server/models/Search';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
+import { useEffect, useRef } from 'react';
 import { useIntl } from 'react-intl';
 
 interface SearchLookupResult {
@@ -58,6 +59,7 @@ const Search = () => {
           ? 'a'
           : '');
   const shouldSearch = Boolean(searchQuery) || searchType === 'person';
+  const lookupLoadMoreRef = useRef<HTMLDivElement>(null);
   const categoryMessages = {
     all: searchTypeMessages.all,
     movie: searchTypeMessages.movies,
@@ -90,6 +92,28 @@ const Search = () => {
     },
     { hideAvailable: false, hideBlocklisted: false, hideRequested: false }
   );
+
+  useEffect(() => {
+    if (
+      (searchType !== 'keyword' && searchType !== 'company') ||
+      !lookupLoadMoreRef.current
+    ) {
+      return;
+    }
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting && !isLoadingMore && !isReachingEnd) {
+          fetchMore();
+        }
+      },
+      { rootMargin: '600px' }
+    );
+
+    observer.observe(lookupLoadMoreRef.current);
+
+    return () => observer.disconnect();
+  }, [fetchMore, isLoadingMore, isReachingEnd, searchType]);
 
   if (error) {
     return <ErrorPage statusCode={500} />;
@@ -179,6 +203,7 @@ const Search = () => {
               ))}
             </ul>
           )}
+          <div ref={lookupLoadMoreRef} className="h-px" />
           {isLoadingMore && (
             <div className="py-6 text-center text-gray-400">Loading…</div>
           )}
