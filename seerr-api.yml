@@ -5522,7 +5522,7 @@ paths:
       parameters:
         - in: query
           name: query
-          required: true
+          required: false
           schema:
             type: string
             example: 'Mulan'

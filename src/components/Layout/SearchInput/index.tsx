@@ -46,7 +46,6 @@ const SearchInput = () => {
     setSearchValue,
     setIsOpen,
     searchType,
-    searchTypeLocked,
     setSearchType,
     clear,
   } = useSearchInput();
@@ -102,9 +101,8 @@ const SearchInput = () => {
             id="search_type"
             aria-label={intl.formatMessage(messages.searchType)}
             value={searchType}
-            disabled={searchTypeLocked}
             onChange={(e) => setSearchType(e.target.value as SearchType)}
-            className="mr-3 max-w-[7rem] cursor-pointer border-0 bg-transparent py-2 pl-3 pr-2 text-sm text-gray-200 focus:outline-none focus:ring-0 disabled:cursor-default disabled:opacity-100"
+            className="mr-3 max-w-[7rem] cursor-pointer border-0 bg-transparent py-2 pl-3 pr-2 text-sm text-gray-200 focus:outline-none focus:ring-0"
             style={{ color: 'rgb(211 178 252)' }}
           >
             {searchTypes.map(({ value, message }) => (

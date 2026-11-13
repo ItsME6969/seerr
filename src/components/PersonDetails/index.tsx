@@ -8,7 +8,7 @@ import TitleCard from '@app/components/TitleCard';
 import globalMessages from '@app/i18n/globalMessages';
 import ErrorPage from '@app/pages/_error';
 import defineMessages from '@app/utils/defineMessages';
-import { CircleStackIcon } from '@heroicons/react/24/solid';
+import { CircleStackIcon, FilmIcon, TvIcon } from '@heroicons/react/24/solid';
 import type { PersonCombinedCreditsResponse } from '@server/interfaces/api/personInterfaces';
 import type { PersonDetails as PersonDetailsType } from '@server/models/Person';
 import { groupBy } from 'lodash';
@@ -136,25 +136,46 @@ const PersonDetails = () => {
   const isLoading = !combinedCredits && !errorCombinedCredits;
 
   const mediaTypePicker = (
-    <div className="mb-2 flex flex-grow sm:mb-0 sm:mr-2 lg:flex-grow-0">
-      <span className="inline-flex cursor-default items-center rounded-l-md border border-r-0 border-gray-500 bg-gray-800 px-3 text-sm text-gray-100">
-        <CircleStackIcon className="h-6 w-6" />
-      </span>
-      <select
-        id="mediaType"
-        name="mediaType"
-        onChange={(e) => {
-          setCurrentMediaType(e.target.value as MediaType);
-        }}
-        value={currentMediaType}
-        className="rounded-r-only"
-      >
-        <option value="all">{intl.formatMessage(globalMessages.all)}</option>
-        <option value="movie">
-          {intl.formatMessage(globalMessages.movies)}
-        </option>
-        <option value="tv">{intl.formatMessage(globalMessages.tvshows)}</option>
-      </select>
+    <div className="mb-2 flex flex-grow overflow-hidden rounded-md border border-gray-500 text-sm sm:mb-0 sm:mr-2 lg:flex-grow-0">
+      {(
+        [
+          {
+            value: 'all' as const,
+            label: globalMessages.all,
+            Icon: CircleStackIcon,
+          },
+          {
+            value: 'movie' as const,
+            label: globalMessages.movies,
+            Icon: FilmIcon,
+          },
+          { value: 'tv' as const, label: globalMessages.tvshows, Icon: TvIcon },
+        ] satisfies {
+          value: MediaType;
+          label: typeof globalMessages.all;
+          Icon: typeof CircleStackIcon;
+        }[]
+      ).map(({ value, label, Icon }, index) => (
+        <button
+          key={value}
+          type="button"
+          onClick={() => setCurrentMediaType(value)}
+          className={`flex flex-1 items-center justify-center gap-1 px-3 py-2 transition sm:flex-none ${
+            index > 0 ? 'border-l border-gray-500' : ''
+          } ${
+            currentMediaType === value
+              ? value === 'movie'
+                ? 'bg-blue-600 text-white'
+                : value === 'tv'
+                  ? 'bg-purple-600 text-white'
+                  : 'bg-gray-600 text-white'
+              : 'bg-gray-800 text-gray-300 hover:bg-gray-700 hover:text-white'
+          }`}
+        >
+          <Icon className="h-4 w-4" />
+          {intl.formatMessage(label)}
+        </button>
+      ))}
     </div>
   );
 
