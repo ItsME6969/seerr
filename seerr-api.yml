@@ -1291,6 +1291,9 @@ components:
           type: number
         rootFolder:
           type: string
+        requesterTag:
+          type: string
+          nullable: true
         ignoreQuota:
           type: boolean
           example: false
@@ -6629,6 +6632,9 @@ paths:
                 userId:
                   type: number
                   nullable: true
+                requesterTag:
+                  type: string
+                  description: Optional requester tag label supplied by an external integration. Seerr creates or resolves the corresponding Arr tag.
                 ignoreQuota:
                   type: boolean
                   example: false
@@ -6738,6 +6744,9 @@ paths:
                   type: number
                 userId:
                   type: number
+                  nullable: true
+                requesterTag:
+                  type: string
                   nullable: true
               required:
                 - mediaType
