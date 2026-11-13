@@ -57,7 +57,7 @@ const useDiscover = <
   S = Record<string, never>,
   O = Record<string, unknown>,
 >(
-  endpoint: string,
+  endpoint: string | null,
   options?: O,
   { hideAvailable = true, hideBlocklisted = true, hideRequested = true } = {}
 ): DiscoverResult<T, S> => {
@@ -69,6 +69,10 @@ const useDiscover = <
     BaseSearchResult<T> & S
   >(
     (pageIndex: number, previousPageData) => {
+      if (!endpoint) {
+        return null;
+      }
+
       if (previousPageData && pageIndex + 1 > previousPageData.totalPages) {
         return null;
       }
@@ -79,6 +83,12 @@ const useDiscover = <
       };
 
       const finalQueryString = Object.keys(params)
+        .filter(
+          (paramKey) =>
+            params[paramKey] !== undefined &&
+            params[paramKey] !== null &&
+            params[paramKey] !== ''
+        )
         .map(
           (paramKey) =>
             `${paramKey}=${encodeURIExtraParams(params[paramKey] as string)}`
@@ -97,7 +107,7 @@ const useDiscover = <
 
   const resultIds: Set<number> = new Set<number>();
 
-  const isLoadingInitialData = !data && !error;
+  const isLoadingInitialData = endpoint ? !data && !error : false;
   const isLoadingMore =
     isLoadingInitialData ||
     (size > 0 &&

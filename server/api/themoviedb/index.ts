@@ -300,6 +300,22 @@ class TheMovieDb extends ExternalAPI implements TvShowProvider {
     }
   };
 
+  public getPopularPeople = async ({
+    page = 1,
+    language = this.locale,
+  }: {
+    page?: number;
+    language?: string;
+  }): Promise<TmdbSearchPersonResponse> => {
+    try {
+      return await this.get<TmdbSearchPersonResponse>('/person/popular', {
+        params: { page: page || 1, language },
+      });
+    } catch {
+      return { page: 1, results: [], total_pages: 1, total_results: 0 };
+    }
+  };
+
   public getPerson = async ({
     personId,
     language = this.locale,

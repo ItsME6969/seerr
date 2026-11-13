@@ -46,6 +46,18 @@ const Search = () => {
       | 'collection'
       | undefined) ?? 'all';
   const isPersonSearch = searchType === 'person';
+  const query =
+    typeof router.query.query === 'string' ? router.query.query.trim() : '';
+  const searchQuery =
+    query ||
+    (searchType === 'collection'
+      ? 'collection'
+      : searchType === 'keyword'
+        ? 'based'
+        : searchType === 'company'
+          ? 'a'
+          : '');
+  const shouldSearch = Boolean(searchQuery) || searchType === 'person';
   const categoryMessages = {
     all: searchTypeMessages.all,
     movie: searchTypeMessages.movies,
@@ -71,10 +83,10 @@ const Search = () => {
     | CollectionResult
     | SearchLookupResult
   >(
-    `/api/v1/search`,
+    shouldSearch ? `/api/v1/search` : null,
     {
-      query: router.query.query,
-      ...(searchType !== 'all' && !isPersonSearch ? { type: searchType } : {}),
+      query: searchQuery,
+      ...(searchType !== 'all' ? { type: searchType } : {}),
     },
     { hideAvailable: false, hideBlocklisted: false, hideRequested: false }
   );

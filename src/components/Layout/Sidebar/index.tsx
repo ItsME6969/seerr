@@ -58,7 +58,7 @@ const SidebarLinks: SidebarLinkProps[] = [
     messagesKey: 'dashboard',
     svgIcon: <SparklesIcon className="mr-3 h-6 w-6" />,
     activeRegExp:
-      /^\/(discover\/(keyword|studio|collection)(\/|$)|discover\/?$|$)/,
+      /^\/(discover\/(keyword|studio|collection)(\/|$)|person(\/|$)|discover\/?$|$)/,
   },
   {
     href: '/discover/movies',

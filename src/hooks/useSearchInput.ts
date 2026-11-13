@@ -16,12 +16,16 @@ export type SearchType =
   | 'company'
   | 'collection';
 
+const normalizeSearchQuery = (value: string) =>
+  value.trim().replace(/\s+/g, ' ');
+
 const getSearchTypeFromPathname = (
   pathname: string
 ): SearchType | undefined => {
   if (pathname.startsWith('/collection/')) return 'collection';
   if (pathname.includes('/keyword')) return 'keyword';
   if (pathname.includes('/studio/')) return 'company';
+  if (pathname.startsWith('/person/')) return 'person';
   if (pathname.startsWith('/discover/movies')) return 'movie';
   if (pathname.startsWith('/discover/tv')) return 'tv';
 
@@ -34,7 +38,6 @@ interface SearchObject {
   setIsOpen: Dispatch<SetStateAction<boolean>>;
   setSearchValue: Dispatch<SetStateAction<string>>;
   searchType: SearchType;
-  searchTypeLocked: boolean;
   setSearchType: (type: SearchType) => void;
   clear: () => void;
 }
@@ -51,8 +54,6 @@ const useSearchInput = (): SearchObject => {
   const [searchValue, debouncedValue, setSearchValue] = useDebouncedState(
     (router.query.query as string) ?? ''
   );
-  const routeSearchType = getSearchTypeFromPathname(router.pathname);
-  const searchTypeLocked = routeSearchType !== undefined;
 
   /**
    * This effect handles routing when the debounced search input
@@ -62,13 +63,15 @@ const useSearchInput = (): SearchObject => {
    * in a new route. If we are, then we only replace the history.
    */
   useEffect(() => {
-    if (debouncedValue !== '' && searchOpen) {
+    const normalizedValue = normalizeSearchQuery(debouncedValue);
+
+    if (normalizedValue !== '' && searchOpen) {
       if (router.pathname.startsWith('/search')) {
         router.replace({
           pathname: router.pathname,
           query: {
             ...router.query,
-            query: debouncedValue,
+            query: normalizedValue,
           },
         });
       } else {
@@ -77,7 +80,7 @@ const useSearchInput = (): SearchObject => {
           .push({
             pathname: '/search',
             query: {
-              query: debouncedValue,
+              query: normalizedValue,
               ...(searchType !== 'all' ? { type: searchType } : {}),
             },
           })
@@ -96,7 +99,9 @@ const useSearchInput = (): SearchObject => {
     if (
       searchValue === '' &&
       router.pathname.startsWith('/search') &&
-      !searchOpen
+      !searchOpen &&
+      !lastRoute &&
+      !router.query.type
     ) {
       if (lastRoute) {
         router.push(lastRoute).then(() => window.scrollTo(0, 0));
@@ -136,7 +141,9 @@ const useSearchInput = (): SearchObject => {
     if (router.query.query !== debouncedValue) {
       setSearchValue(
         router.query.query
-          ? decodeURIComponent(router.query.query as string)
+          ? normalizeSearchQuery(
+              decodeURIComponent(router.query.query as string)
+            )
           : ''
       );
 
@@ -151,12 +158,41 @@ const useSearchInput = (): SearchObject => {
   }, [router, setSearchValue, searchType]);
 
   const clear = () => {
-    setIsOpen(false);
     setSearchValue('');
+
+    if (searchType === 'movie') {
+      router.replace('/discover/movies');
+    } else if (searchType === 'tv') {
+      router.replace('/discover/tv');
+    } else if (searchType === 'all') {
+      router.replace('/');
+    } else {
+      router.replace({
+        pathname: '/search',
+        query: { type: searchType },
+      });
+    }
   };
 
   const setSearchType = (type: SearchType) => {
     setSearchTypeState(type);
+
+    if (normalizeSearchQuery(searchValue) === '') {
+      if (type === 'movie') {
+        router.push('/discover/movies');
+      } else if (type === 'tv') {
+        router.push('/discover/tv');
+      } else if (type === 'all') {
+        router.push('/');
+      } else {
+        router.push({
+          pathname: '/search',
+          query: { type },
+        });
+      }
+
+      return;
+    }
 
     if (!router.pathname.startsWith('/search')) {
       return;
@@ -181,7 +217,6 @@ const useSearchInput = (): SearchObject => {
     setIsOpen,
     setSearchValue,
     searchType,
-    searchTypeLocked,
     setSearchType,
     clear,
   };

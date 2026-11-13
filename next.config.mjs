@@ -2,6 +2,7 @@
  * @type {import('next').NextConfig}
  */
 const nextConfig = {
+  allowedDevOrigins: ['127.0.0.1', 'localhost'],
   env: {
     commitTag: process.env.COMMIT_TAG || 'local',
     unsafeDoNotUseDemo: process.env.UNSAFE_DO_NOT_USE_DEMO,

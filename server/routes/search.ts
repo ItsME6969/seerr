@@ -23,8 +23,56 @@ const getSearchType = (value: unknown): SearchType =>
   searchTypes.includes(value as SearchType) ? (value as SearchType) : 'all';
 
 searchRoutes.get('/', async (req, res, next) => {
-  const queryString = req.query.query as string;
+  const normalizedQuery =
+    typeof req.query.query === 'string'
+      ? req.query.query.trim().replace(/\s+/g, ' ')
+      : '';
   const searchType = getSearchType(req.query.type);
+  const queryString =
+    normalizedQuery ||
+    (searchType === 'keyword' ? 'based' : searchType === 'company' ? 'a' : '');
+
+  if (!queryString && searchType === 'person') {
+    try {
+      const tmdb = new TheMovieDb();
+      const people = await tmdb.getPopularPeople({
+        page: Number(req.query.page) || 1,
+        language: (req.query.language as string) ?? req.locale,
+      });
+      const popularPeople = Array.isArray(people.results) ? people.results : [];
+
+      return res.status(200).json({
+        page: people.page || 1,
+        totalPages: people.total_pages || 0,
+        totalResults: people.total_results || 0,
+        results: mapSearchResults(
+          popularPeople.map((person) => ({
+            ...person,
+            media_type: 'person' as const,
+          }))
+        ),
+      });
+    } catch (e) {
+      logger.debug('Something went wrong retrieving popular people', {
+        label: 'API',
+        errorMessage: e.message,
+      });
+      return next({
+        status: 500,
+        message: 'Unable to retrieve popular people.',
+      });
+    }
+  }
+
+  if (!queryString?.trim()) {
+    return res.status(200).json({
+      page: 1,
+      totalPages: 0,
+      totalResults: 0,
+      results: [],
+    });
+  }
+
   const searchProvider = findSearchProvider(queryString.toLowerCase());
   let results: TmdbSearchMultiResponse;
 
@@ -33,7 +81,7 @@ searchRoutes.get('/', async (req, res, next) => {
       const tmdb = new TheMovieDb();
       const keywordResults = await tmdb.searchKeyword({
         query: queryString,
-        page: Number(req.query.page),
+        page: Number(req.query.page) || 1,
       });
       return res.status(200).json({
         page: keywordResults.page,
@@ -51,7 +99,7 @@ searchRoutes.get('/', async (req, res, next) => {
       const tmdb = new TheMovieDb();
       const companyResults = await tmdb.searchCompany({
         query: queryString,
-        page: Number(req.query.page),
+        page: Number(req.query.page) || 1,
       });
       return res.status(200).json({
         page: companyResults.page,
@@ -126,11 +174,18 @@ searchRoutes.get('/', async (req, res, next) => {
           })),
         };
       } else if (searchType === 'person') {
-        results = await tmdb.searchPeople({
+        const response = await tmdb.searchPeople({
           query: queryString,
           page: Number(req.query.page),
           language: (req.query.language as string) ?? req.locale,
         });
+        results = {
+          ...response,
+          results: response.results.map((result) => ({
+            ...result,
+            media_type: 'person' as const,
+          })),
+        };
       } else {
         results = await tmdb.searchMulti({
           query: queryString,
