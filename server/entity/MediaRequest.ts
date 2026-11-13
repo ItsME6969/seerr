@@ -336,6 +336,7 @@ export class MediaRequest {
         type: MediaType.MOVIE,
         media,
         requestedBy: requestUser,
+        requesterTag: requestBody.requesterTag,
         // If the user is an admin or has the "auto approve" permission, automatically approve the request
         status: user.hasPermission(
           [
@@ -451,6 +452,7 @@ export class MediaRequest {
         type: MediaType.TV,
         media,
         requestedBy: requestUser,
+        requesterTag: requestBody.requesterTag,
         // If the user is an admin or has the "auto approve" permission, automatically approve the request
         status: user.hasPermission(
           [
@@ -610,6 +612,9 @@ export class MediaRequest {
     },
   })
   public tags?: number[];
+
+  @Column({ type: 'varchar', nullable: true })
+  public requesterTag?: string;
 
   @Column({ default: false })
   public isAutoRequest: boolean;
